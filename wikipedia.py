@@ -8,17 +8,15 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
 
-class WikipediaParser:
-    def __init__(self):
+class WikipediaCrawler:
+    def __init__(self, directory, max_depth):
         self.wiki_page_link_pattern = re.compile("/wiki/[\w]+$")
         self.category_link_pattern = re.compile("/wiki/Category:[\w]+$")
 
-        # second, download page, extract data and store it in corpus folder
         self.ssl_context = ssl.create_default_context()
-        self.max_depth = 1
-
+        self.max_depth = max_depth
         self.store_after_parsing = True
-        self.directory = "corpus"
+        self.directory = directory
         self.crawled_pages = set()
         self.valid_origins = ["https://en.wikipedia.org"]
 
@@ -90,10 +88,10 @@ class WikipediaParser:
         for link in links:
             link_url = link.get('href')
             if link_url is not None:
-                base_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(link_url))
-                if base_url in self.valid_origins and self.wiki_page_link_pattern.match(link_url[len(base_url):]):
-                    page.links.append(link_url)
-                    pages.extend(self.parse(link_url, depth + 1))
+                if self.wiki_page_link_pattern.match(link_url):
+                    base_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(url))
+                    page.links.append(base_url + link_url)
+                    pages.extend(self.parse(base_url + link_url, depth + 1))
 
         # extract paragraphs
         text_container = soup.find('div', {'class': 'mw-parser-output'})
@@ -130,7 +128,7 @@ class WikipediaParser:
         if toc_element is not None:
             page.table_of_contents = list(filter(lambda x: x != "", toc_element.text.split("\n")[1:]))
 
-        page.title = soup.find(id="firstHeading").string
+        page.title = soup.find(id="firstHeading").text
         page.html = str(soup)
 
         if self.store_after_parsing:
