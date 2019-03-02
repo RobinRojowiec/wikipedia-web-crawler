@@ -15,7 +15,7 @@ class WikipediaCrawler:
 
         self.ssl_context = ssl.create_default_context()
         self.max_depth = max_depth
-        self.store_after_parsing = True
+        self.store_after_parsing = False
         self.directory = directory
         self.crawled_pages = set()
         self.valid_origins = ["https://en.wikipedia.org"]
@@ -64,7 +64,7 @@ class WikipediaCrawler:
         links = list(filter(lambda x: x.get('href') is not None, soup.find_all('a')))
         for link in links:
             url = link.get('href')
-            pages.extend(self.parse(base_url + url, depth + 1))
+            pages.extend(self.crawl(base_url + url, depth + 1))
 
         return pages
 
@@ -91,7 +91,7 @@ class WikipediaCrawler:
                 if self.wiki_page_link_pattern.match(link_url):
                     base_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(url))
                     page.links.append(base_url + link_url)
-                    pages.extend(self.parse(base_url + link_url, depth + 1))
+                    pages.extend(self.crawl(base_url + link_url, depth + 1))
 
         # extract paragraphs
         text_container = soup.find('div', {'class': 'mw-parser-output'})
@@ -136,7 +136,7 @@ class WikipediaCrawler:
         pages.append(page)
         return pages
 
-    def parse(self, initial_link, depth=0):
+    def crawl(self, initial_link, depth=0):
         if depth <= self.max_depth:
             base_url = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(initial_link))
             if base_url in self.valid_origins:
@@ -171,7 +171,6 @@ class WikipediaPage:
             fields = self.__dict__
             json.dump(fields, file, indent=4, ensure_ascii=False)
 
-    @staticmethod
-    def load(self, filename):
-        with open(filename, "r", encoding='utf-8') as file:
-            self.__dict__ = json.load(file)
+
+def extract_wiki_page(url):
+    return url.split("/")[-1]

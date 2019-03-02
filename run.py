@@ -6,7 +6,7 @@ import os
 
 from tqdm import tqdm
 
-from wikipedia import WikipediaCrawler
+from wikipedia_crawler import WikipediaCrawler
 
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('depth', help='depth of crawling', type=int)
@@ -31,4 +31,4 @@ else:
 
 crawler = WikipediaCrawler(args.directory, args.depth)
 for source_url in sources:
-    pages = crawler.parse(source_url)
+    pages = crawler.crawl(source_url)
