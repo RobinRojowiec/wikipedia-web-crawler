@@ -4,7 +4,8 @@ import os
 import jsonpickle
 from flask import Flask, request, Response
 
-from wikipedia_crawler import WikipediaCrawler, extract_wiki_page
+from wikipedia_crawler import WikipediaCrawler
+from wikipedia_page import extract_wiki_page
 
 app = Flask(__name__)
 directory = "corpus"
