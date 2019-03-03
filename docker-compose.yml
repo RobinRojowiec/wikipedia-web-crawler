@@ -1,0 +1,17 @@
+version: '3.3'
+services:
+  wikipedia_crawler:
+    image: robinr/wikipedia-crawler
+    ports:
+    - "3330"
+    environment:
+    - PORT=3330
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 250M
+      replicas: 2
