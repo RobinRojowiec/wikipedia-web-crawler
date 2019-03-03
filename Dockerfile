@@ -16,4 +16,4 @@ COPY . /app
 
 ENTRYPOINT [ "python3" ]
 
-CMD [ "flask_server.py" ]
+CMD [ "server.py" ]
