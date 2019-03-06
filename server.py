@@ -1,18 +1,24 @@
 import glob
 import os
+import uuid
 
 import jsonpickle
-from flask import Flask, request, Response
+from flask import Flask, request, send_file
 
 from wikipedia_crawler import WikipediaCrawler
 from wikipedia_page import extract_wiki_page
 
 app = Flask(__name__)
-directory = "corpus"
+directory = "data"
+file_limit = 50
+
+if not os.path.exists(directory):
+    os.makedirs(directory)
 
 
 @app.route('/clear')
 def clear_corpus():
+    print("clearing temporary files")
     files = glob.glob(directory + "/*")
     for f in files:
         os.remove(f)
@@ -20,8 +26,27 @@ def clear_corpus():
     return "Done!"
 
 
+def filecount(dir_name):
+    file_list = [f for f in os.listdir(dir_name)]
+    return len(file_list)
+
+
+def check_and_clear():
+    if filecount(directory + "/") > file_limit:
+        clear_corpus()
+
+
+@app.route('/download/<id>')
+def download(id):
+    file_path = directory + "/" + id + ".json"
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True, attachment_filename=id + ".json", mimetype="application/json")
+
+
 @app.route('/crawl')
 def analyze():
+    check_and_clear()
+
     host = "https://en.wikipedia.org/wiki/"
     wiki_page: str = request.args.get('wiki_page')
     if wiki_page is None:
@@ -31,14 +56,18 @@ def analyze():
         url: "" = host + wiki_page
     depth: int = request.args.get('depth', 0, int)
 
-    crawler: WikipediaCrawler = WikipediaCrawler("corpus", depth)
+    crawler: WikipediaCrawler = WikipediaCrawler(directory, depth)
     pages = crawler.crawl(url)
 
     json_string = jsonpickle.encode(pages, unpicklable=False)
+    id = str(uuid.uuid4())
+    file_path = directory + "/" + id + ".json"
 
-    return Response(json_string,
-                    mimetype='application/json',
-                    headers={'Content-Disposition': 'attachment;filename=crawl_' + wiki_page + '.json'})
+    with open(file_path, 'w+', encoding="utf-8") as file:
+        file.write(json_string)
+
+    response = {"page": wiki_page, "download_url": "/download/" + id}
+    return jsonpickle.encode(response, unpicklable=False)
 
 
 if __name__ == '__main__':
